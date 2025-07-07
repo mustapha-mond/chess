@@ -1,1 +1,112 @@
+pragma solidity >=0.7.0 <0.9.0;
+
+import "hardhat/console.sol";
+
+/**
+ * @title Owner
+ * @dev Set & change owner
+ */
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract Chess {
+
+   IERC20 dai; //place bets in Dai stablecoin
+
+    address private owner;
+
+    struct player {
+        string name;
+        uint256 ELO; // Fix type later
+        uint256 balance;
+        address[] invitations; //Ties to games later. 
+        uint256[] gamesPointer;
+        uint256 index;
+    }
+
+    mapping(address => player) players;
+    address[] playerIdx;
+
+    struct game {
+        address white;
+        address black;
+        bytes3[] moves;
+        bool resigned;
+        bool checkmate;
+    }
+
+    mapping(uint256 => game) games;
+
+    // event for EVM logging
+    event OwnerSet(address indexed oldOwner, address indexed newOwner);
+
+    // modifier to check if caller is owner
+    modifier isOwner() {
+        // If the first argument of 'require' evaluates to 'false', execution terminates and all
+        // changes to the state and to Ether balances are reverted.
+        // This used to consume all gas in old EVM versions, but not anymore.
+        // It is often a good idea to use 'require' to check if functions are called correctly.
+        // As a second argument, you can also provide an explanation about what went wrong.
+        require(msg.sender == owner, "Caller is not owner");
+        _;
+    }
+
+    /**
+     * @dev Set contract deployer as owner
+     */
+    constructor() {
+        console.log("Owner contract deployed by:", msg.sender);
+        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor
+        emit OwnerSet(address(0), owner);
+    }
+
+    /**
+     * @dev Change owner
+     * @param newOwner address of new owner
+     */
+    function changeOwner(address newOwner) public isOwner {
+        emit OwnerSet(owner, newOwner);
+        owner = newOwner;
+    }
+
+    /**
+     * @dev Return owner address
+     * @return address of owner
+     */
+    function getOwner() external view returns (address) {
+        return owner;
+    }
+
+    function _isPlayer(address _player) public view returns (bool) {
+        if (playerIdx.length == 0) return false;
+        return (playerIdx[players[_player].index] == _player);
+    }
+
+    function regPlayer(address _player, string calldata _name, uint256 _ELO) public isOwner {
+        require(!_isPlayer(_player), "Error: Player already registered");
+        players[_player].name = _name;
+        players[_player].ELO = _ELO;
+        playerIdx.push(_player);
+        players[_player].index = playerIdx.length - 1;
+    }
+
+
+    function inviteUser(address _player) public {
+        require(_isPlayer(_player), "Error: Player 1 not registered");
+        // Later check to see if existing invitation
+        players[_player].invitations.push(msg.sender);
+
+    }
+
+    function startGame() public {
+        // Accept Invitation and pass 'To Move" to Player2
+    }
+
+    function makeMove(bytes3 _move) public {
+        require(_isPlayer(msg.sender), "Error: Player not registered");
+    // How to handle resignation and checkmate
+
+    }
+
+}
 
